@@ -11,6 +11,9 @@ When asked to create or update a mind map:
 - Write it as Markdown at `mindmaps/maps/<kebab-case-name>.md`, following the
   format in `mindmaps/README.md` (front matter with `title`, `description`,
   `tags`, `markmap:` options; one `#` root, `##` branches, nested `-` bullets).
+- Pick a theme with `markmap: theme:` — `studio` (default), `pastel`,
+  `midnight`, `paper`, `mono` or `classic`. Images go in `mindmaps/maps/img/`
+  and are referenced as `maps/img/<file>`.
 - Keep nodes short. Prefer 5 to 9 main branches with 3 to 6 children each.
   KaTeX `$math$`, `code`, links and fenced code blocks are supported.
 - Run `python3 mindmaps/build_manifest.py` afterwards and commit both the new
