@@ -57,7 +57,7 @@ markmap:
 - Midnight: glowing outlines on a dark grid
 - Paper: serif ink on notebook lines
 - Mono: black-and-white boxes
-- Classic: the original markmap look
+- Classic: bold branch pills and underlined details
 - "Use the map's own theme" returns to the front matter choice
 
 ## Editing

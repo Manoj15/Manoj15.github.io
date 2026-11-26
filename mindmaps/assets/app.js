@@ -320,7 +320,9 @@ Topic: `;
     },
     classic: {
       name: "Classic", cards: false, preview: ["#ffffff", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"],
-      defaults: {},
+      defaults: { maxWidth: 340, spacingHorizontal: 96, spacingVertical: 10, paddingX: 12, nodeMinHeight: 18 },
+      lineWidths: [3.2, 3.2, 3, 2.2, 1.4], // by markmap depth (root = 1)
+      middleUpToDepth: 2, // root and branch pills attach in the middle; deeper nodes keep the underline
     },
   };
   const DEFAULT_THEME = "studio";
@@ -351,6 +353,10 @@ Topic: `;
     opts.maxInitialScale = 1.4;
     opts.anchor = td.anchor || "bottom";
     opts.paddingX = td.paddingX != null ? td.paddingX : window.markmap.defaultOptions.paddingX;
+    const lw = THEMES[themeId()].lineWidths;
+    if (lw) opts.lineWidth = (d) => lw[Math.min(d.state.depth, lw.length - 1)];
+    const mid = THEMES[themeId()].middleUpToDepth;
+    if (mid) opts.anchor = (d) => (d.state.depth <= mid ? "middle" : "bottom");
     return opts;
   }
   function applySvgTheme() {
@@ -567,6 +573,8 @@ Topic: `;
       const dark = effectiveDark();
       const svgClass = svgEl.getAttribute("class").split(/\s+/).filter((c) => /^mmt/.test(c)).join(" ");
       const optsJson = JSON.stringify({ ...themeDefaults(), ...effectiveStyle() });
+      const lineWidths = JSON.stringify(THEMES[themeId()].lineWidths || null);
+      const middleUpTo = JSON.stringify(THEMES[themeId()].middleUpToDepth || 0);
       const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
@@ -588,6 +596,10 @@ ${themeCss()}</style>
   var opts = M.deriveOptions(json);
   if (json.anchor) opts.anchor = json.anchor;
   if (json.paddingX != null) opts.paddingX = json.paddingX;
+  var LW = ${lineWidths};
+  if (LW) opts.lineWidth = function (d) { return LW[Math.min(d.state.depth, LW.length - 1)]; };
+  var MID = ${middleUpTo};
+  if (MID) opts.anchor = function (d) { return d.state.depth <= MID ? "middle" : "bottom"; };
   var mmDecorate = ${mmDecorate.toString()};
   var mm = new M.Markmap("#mm", opts);
   var render = mm.renderData.bind(mm);

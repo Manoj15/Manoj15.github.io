@@ -1,6 +1,7 @@
 /* markmap-view 0.18.12, patched for Mind Map Studio: adds option
- * `anchor: "middle"` so links and fold circles attach to the vertical
- * centre of each node (used by the card themes). Default behaviour unchanged. */
+ * `anchor: "middle"` (or a function of the node returning "middle" or
+ * "bottom") so links and fold circles attach to the vertical centre of a node
+ * (used by the card themes). Default behaviour unchanged. */
 (function(exports, d32) {
   "use strict";
   class Hook {
@@ -1150,7 +1151,7 @@
     }
     async renderData(originData) {
       const { paddingX, autoFit, color, maxWidth, lineWidth, anchor } = this.options;
-      const anchorY = (d) => anchor === "middle" ? d.state.rect.height / 2 : d.state.rect.height + lineWidth(d) / 2;
+      const anchorY = (d) => (typeof anchor === "function" ? anchor(d) : anchor) === "middle" ? d.state.rect.height / 2 : d.state.rect.height + lineWidth(d) / 2;
       const rootNode = this.state.data;
       if (!rootNode) return;
       const nodeMap = {};
