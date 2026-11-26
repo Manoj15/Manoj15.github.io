@@ -10,7 +10,7 @@
         "product-ds"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:32:32+00:00"
     },
     {
       "slug": "getting-started",
@@ -20,7 +20,21 @@
         "guide"
       ],
       "nodes": 50,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:32:32+00:00"
+    },
+    {
+      "slug": "ml-approaches",
+      "title": "Machine Learning Approaches",
+      "description": "Research-level map of ML paradigms, objective families and methods, showing where contrastive learning fits (coverage through mid-2026).",
+      "tags": [
+        "machine-learning",
+        "self-supervised",
+        "contrastive-learning",
+        "reinforcement-learning",
+        "research"
+      ],
+      "nodes": 193,
+      "updated": null
     },
     {
       "slug": "recsys-system-design",
@@ -32,7 +46,7 @@
         "ml"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:32:32+00:00"
     },
     {
       "slug": "transformers",
@@ -44,7 +58,7 @@
         "ml"
       ],
       "nodes": 58,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:32:32+00:00"
     }
   ]
 }
