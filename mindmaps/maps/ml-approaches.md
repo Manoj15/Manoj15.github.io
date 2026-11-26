@@ -4,7 +4,7 @@ description: Research-level map of ML paradigms, objective families and methods,
 tags: [machine-learning, self-supervised, contrastive-learning, reinforcement-learning, research]
 markmap:
   colorFreezeLevel: 2
-  initialExpandLevel: 3
+  initialExpandLevel: 2
   maxWidth: 320
 ---
 

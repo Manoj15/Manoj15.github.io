@@ -267,7 +267,33 @@ Topic: `;
   let current = null; // { kind: 'published'|'draft'|'shared', slug, md, draftId, base }
   let fmOptions = {};
   let rendered = { md: null };
-  const DEFAULT_STYLE = { maxWidth: 0, spacingHorizontal: 80, spacingVertical: 5, colorFreezeLevel: 0, toggleRecursively: false };
+  const DEFAULT_STYLE = { maxWidth: 340, spacingHorizontal: 96, spacingVertical: 10, colorFreezeLevel: 0, toggleRecursively: false };
+  // Node typography by depth (markmap numbers the root 1, main branches 2). Shared by the live view and every export so they match.
+  // Sizes and padding are read by markmap when it measures nodes; colours come from --c,
+  // the branch colour copied from each node's line (see paintNodes).
+  const NODE_CSS = [
+    '.markmap{--markmap-font:400 14.5px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--markmap-a-color:var(--accent,#4a4ac8);--markmap-a-hover-color:var(--accent,#4a4ac8);--markmap-highlight-bg:#ffe58f}',
+    '.markmap-foreign a{text-decoration:none;font-weight:500;border-bottom:1px solid color-mix(in srgb,currentColor 35%,transparent)}',
+    '.markmap-foreign strong{font-weight:650}',
+    '.markmap-foreign code{font-size:.88em;padding:.1em .35em;border-radius:4px}',
+    '.markmap-foreign mark{color:#1d1d27;border-radius:3px;padding:0 .2em}',
+    '.markmap-node>foreignObject>div>div{padding:2px 4px 3px}',
+    '.markmap-node[data-depth="1"]>foreignObject>div>div{font-size:22px;line-height:1.25;font-weight:750;letter-spacing:-.01em;padding:10px 18px;border-radius:12px;background:var(--c,#4a4ac8);color:#fff}',
+    '.markmap-node[data-depth="2"]>foreignObject>div>div{font-size:17px;line-height:1.3;font-weight:650;padding:7px 15px;border-radius:999px;background:color-mix(in srgb,var(--c,#4a4ac8) 16%,var(--map-bg,#fff));box-shadow:inset 0 0 0 1.5px var(--c,#4a4ac8)}',
+    '.markmap-node[data-depth="3"]>foreignObject>div>div{font-size:15.5px;line-height:1.35;font-weight:600}',
+    '.markmap-node[data-depth="1"]>line,.markmap-node[data-depth="2"]>line{stroke-opacity:0}',
+    '.markmap-node>circle{stroke-width:2px}',
+  ].join("\n");
+  const LINE_WIDTHS = [3.2, 3.2, 3, 2.2, 1.4]; // indexed by markmap depth (root = 1)
+  const lineWidthByDepth = (d) => LINE_WIDTHS[Math.min(d.state.depth, LINE_WIDTHS.length - 1)];
+  document.head.appendChild(Object.assign(document.createElement("style"), { textContent: NODE_CSS }));
+  function paintNodes() {
+    svgEl.querySelectorAll("g.markmap-node").forEach((g) => {
+      const line = g.querySelector(":scope > line");
+      const c = line && line.getAttribute("stroke");
+      if (c && g.style.getPropertyValue("--c") !== c) g.style.setProperty("--c", c);
+    });
+  }
   let userStyle = store.get("mm.style", {});
 
   function effectiveStyle() {
@@ -282,6 +308,9 @@ Topic: `;
     opts.toggleRecursively = !!s.toggleRecursively;
     opts.duration = 350;
     opts.maxInitialScale = 1.4;
+    opts.paddingX = 12;
+    opts.nodeMinHeight = 18;
+    opts.lineWidth = lineWidthByDepth;
     return opts;
   }
 
@@ -302,7 +331,7 @@ Topic: `;
         mm = Markmap.create(svgEl, opts);
         // Re-apply search marks after every redraw (markmap resets node classes).
         const render = mm.renderData.bind(mm);
-        mm.renderData = async (...args) => { const r = await render(...args); markHits(); return r; };
+        mm.renderData = async (...args) => { const r = await render(...args); paintNodes(); markHits(); return r; };
       }
       if (keepFold && mm.state.data) carryFold(mm.state.data, root);
       await mm.setData(root, opts);
@@ -431,7 +460,7 @@ Topic: `;
     const v = (name) => cs.getPropertyValue(name).trim();
     const bg = getComputedStyle(svg.parentElement).backgroundColor || "#fff";
     const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
-    style.textContent = `.markmap{--markmap-text-color:${v("--markmap-text-color")};--markmap-circle-open-bg:${v("--markmap-circle-open-bg")};--markmap-font:${v("--markmap-font")};--markmap-code-bg:${v("--markmap-code-bg")};--markmap-code-color:${v("--markmap-code-color")};--markmap-a-color:${v("--markmap-a-color")};}`;
+    style.textContent = `${NODE_CSS}\n.markmap{--map-bg:${bg};--markmap-text-color:${v("--markmap-text-color")};--markmap-circle-open-bg:${v("--markmap-circle-open-bg")};--markmap-font:${v("--markmap-font")};--markmap-code-bg:${v("--markmap-code-bg")};--markmap-code-color:${v("--markmap-code-color")};--markmap-a-color:${v("--markmap-a-color")};}`;
     clone.appendChild(style);
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", box.x - pad); rect.setAttribute("y", box.y - pad);
@@ -481,7 +510,8 @@ Topic: `;
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <style>html,body{margin:0;height:100%;background:${dark ? "#16161d" : "#fff"}}svg{width:100%;height:100%;display:block}
-.markmap{--markmap-font:400 15px/20px ui-sans-serif,system-ui,sans-serif}${dark ? ".markmap{--markmap-text-color:#ececf3;--markmap-circle-open-bg:#16161d}" : ""}</style>
+${NODE_CSS}
+.markmap{--map-bg:${dark ? "#16161d" : "#fff"}}${dark ? ".markmap{--markmap-text-color:#ececf3;--markmap-circle-open-bg:#16161d}" : ""}</style>
 </head><body${dark ? ' class="markmap-dark"' : ""}><svg id="mm"></svg>
 <script>${inline(d3js)}<\/script>
 <script>${inline(viewjs)}<\/script>
@@ -494,7 +524,16 @@ Topic: `;
   if (a.styles) M.loadCSS(a.styles);
   if (a.scripts) M.loadJS(a.scripts, { getMarkmap: function(){ return window.markmap; } });
   var opts = M.deriveOptions(Object.assign({}, (r.frontmatter && r.frontmatter.markmap) || {}, ${JSON.stringify(effectiveStyle())}));
-  M.Markmap.create("#mm", opts, r.root);
+  var LW = ${JSON.stringify(LINE_WIDTHS)};
+  opts.paddingX = 12; opts.nodeMinHeight = 18;
+  opts.lineWidth = function(d){ return LW[Math.min(d.state.depth, LW.length - 1)]; };
+  var mm = M.Markmap.create("#mm", opts);
+  var render = mm.renderData.bind(mm);
+  mm.renderData = function(){ return render.apply(null, arguments).then(function(x){
+    document.querySelectorAll("g.markmap-node").forEach(function(g){
+      var l = g.querySelector(":scope > line"); if (l) g.style.setProperty("--c", l.getAttribute("stroke"));
+    }); return x; }); };
+  mm.setData(r.root).then(function(){ mm.fit(); });
 })();
 <\/script></body></html>`;
       download(`${fileBase()}.html`, html, "text/html");

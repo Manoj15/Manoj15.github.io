@@ -151,7 +151,9 @@ input[type="search"], input:not([type]), select, textarea {
 .map-pane:fullscreen { background: var(--map-bg); }
 
 /* markmap colours inside our theme */
-.markmap { --markmap-text-color: var(--text); --markmap-circle-open-bg: var(--map-bg); --markmap-font: 400 15px/20px var(--font); --markmap-highlight-node-bg: color-mix(in srgb, var(--accent) 22%, transparent); }
+/* Node typography by depth lives in NODE_CSS in app.js, so exports get the same look. */
+.markmap { --markmap-text-color: var(--text); --markmap-circle-open-bg: var(--map-bg); --markmap-highlight-node-bg: color-mix(in srgb, var(--accent) 22%, transparent); }
+.map-pane { background-image: radial-gradient(color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1.2px); background-size: 22px 22px; }
 .markmap-dark .markmap { --markmap-code-bg: #2a2a36; --markmap-code-color: #e3e3ee; }
 .markmap-node.hit > foreignObject div { background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 4px; }
 
