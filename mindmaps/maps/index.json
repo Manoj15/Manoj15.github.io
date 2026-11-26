@@ -1,0 +1,50 @@
+{
+  "maps": [
+    {
+      "slug": "ab-testing",
+      "title": "A/B Testing",
+      "description": "Design, analysis and pitfalls of online controlled experiments, as asked in product DS interviews.",
+      "tags": [
+        "statistics",
+        "experimentation",
+        "product-ds"
+      ],
+      "nodes": 62,
+      "updated": null
+    },
+    {
+      "slug": "getting-started",
+      "title": "Getting started",
+      "description": "A tour of what a map can contain and how the toolbar works.",
+      "tags": [
+        "guide"
+      ],
+      "nodes": 50,
+      "updated": null
+    },
+    {
+      "slug": "recsys-system-design",
+      "title": "Recommender System Design",
+      "description": "End-to-end blueprint for an ML system design interview on recommendations.",
+      "tags": [
+        "recsys",
+        "system-design",
+        "ml"
+      ],
+      "nodes": 62,
+      "updated": null
+    },
+    {
+      "slug": "transformers",
+      "title": "Transformers",
+      "description": "Core architecture, attention math, variants and efficiency tricks for NLP and RecSys interviews.",
+      "tags": [
+        "deep-learning",
+        "nlp",
+        "ml"
+      ],
+      "nodes": 58,
+      "updated": null
+    }
+  ]
+}

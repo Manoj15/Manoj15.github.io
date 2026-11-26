@@ -1,0 +1,41 @@
+name: Rebuild mind map index
+
+# Keeps mindmaps/maps/index.json in sync when maps are added or edited,
+# including maps committed from the site's "Save to GitHub" button.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "mindmaps/maps/*.md"
+      - "mindmaps/build_manifest.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mindmaps-index
+  cancel-in-progress: false
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so each map gets its last-updated date
+
+      - name: Build map index
+        run: python3 mindmaps/build_manifest.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add mindmaps/maps/index.json
+          if git diff --cached --quiet; then
+            echo "Index already up to date"
+          else
+            git commit -m "Rebuild mind map index"
+            git push
+          fi

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mind Map Studio</title>
+  <meta name="description" content="Interactive mind maps written in Markdown: browse, explore, edit, export and share.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='9' fill='%235b5bd6'/%3E%3Cg stroke='%235b5bd6' stroke-width='4' fill='none'%3E%3Cpath d='M32 32 L12 14M32 32 L52 14M32 32 L12 50M32 32 L52 50'/%3E%3C/g%3E%3Cg fill='%2300a37a'%3E%3Ccircle cx='12' cy='14' r='6'/%3E%3Ccircle cx='52' cy='14' r='6'/%3E%3Ccircle cx='12' cy='50' r='6'/%3E%3Ccircle cx='52' cy='50' r='6'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/" title="All maps">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="9"/><path d="M32 32 L12 14M32 32 L52 14M32 32 L12 50M32 32 L52 50"/><circle class="leaf" cx="12" cy="14" r="6"/><circle class="leaf" cx="52" cy="14" r="6"/><circle class="leaf" cx="12" cy="50" r="6"/><circle class="leaf" cx="52" cy="50" r="6"/></svg>
+      <span>Mind Map Studio</span>
+    </a>
+    <div class="topbar-title" id="topbarTitle"></div>
+    <div class="topbar-actions">
+      <button class="btn ghost icon" id="themeBtn" title="Toggle light / dark (T)" aria-label="Toggle light or dark theme"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+      <button class="btn ghost icon" id="helpBtn" title="Keyboard shortcuts (?)">?</button>
+    </div>
+  </header>
+
+  <!-- Gallery -->
+  <main id="galleryView" class="view" hidden>
+    <section class="hero">
+      <div>
+        <h1>Your mind maps</h1>
+        <p>Every map is a Markdown file in <code>mindmaps/maps/</code>. Headings and bullet lists become branches.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="btn primary" href="#/new">＋ New map</a>
+        <label class="btn">Open .md file<input type="file" id="importFile" accept=".md,.markdown,.txt" hidden></label>
+        <button class="btn" id="claudePromptBtn" title="Copy a prompt you can give Claude to write a new map">Copy Claude prompt</button>
+      </div>
+    </section>
+    <div class="filters">
+      <input type="search" id="gallerySearch" placeholder="Search maps…" aria-label="Search maps">
+      <div class="tags" id="tagBar"></div>
+    </div>
+    <section id="draftsSection" hidden>
+      <h2 class="section-h">Local drafts <small>saved in this browser only</small></h2>
+      <div class="grid" id="draftGrid"></div>
+    </section>
+    <h2 class="section-h">Published maps</h2>
+    <div class="grid" id="mapGrid"></div>
+    <p class="empty" id="galleryEmpty" hidden>No maps match.</p>
+  </main>
+
+  <!-- Viewer / editor -->
+  <main id="mapView" class="view" hidden>
+    <div class="toolbar" id="toolbar">
+      <div class="tgroup">
+        <button class="btn icon" data-act="zoomIn" title="Zoom in (+)">＋</button>
+        <button class="btn icon" data-act="zoomOut" title="Zoom out (−)">−</button>
+        <button class="btn" data-act="fit" title="Fit to screen (F)">Fit</button>
+      </div>
+      <div class="tgroup">
+        <button class="btn" data-act="expandAll" title="Expand all (0)">Expand</button>
+        <button class="btn" data-act="collapseAll" title="Collapse to root (1)">Collapse</button>
+        <select id="levelSelect" title="Show levels (keys 1–6)" aria-label="Show levels">
+          <option value="">Levels…</option>
+          <option value="1">1 level</option><option value="2">2 levels</option>
+          <option value="3">3 levels</option><option value="4">4 levels</option>
+          <option value="5">5 levels</option><option value="6">6 levels</option>
+        </select>
+      </div>
+      <div class="tgroup search">
+        <input type="search" id="nodeSearch" placeholder="Find node… (/)" aria-label="Find node">
+        <span class="count" id="searchCount"></span>
+        <button class="btn icon" data-act="prevHit" title="Previous match (Shift+Enter)">↑</button>
+        <button class="btn icon" data-act="nextHit" title="Next match (Enter)">↓</button>
+      </div>
+      <div class="tgroup">
+        <div class="menu">
+          <button class="btn" data-menu="exportMenu">Export ▾</button>
+          <div class="menu-pop" id="exportMenu" hidden>
+            <button data-act="exportSvg">SVG image</button>
+            <button data-act="exportPng">PNG image (2×)</button>
+            <button data-act="exportHtml">Interactive HTML (offline)</button>
+            <button data-act="exportMd">Markdown source</button>
+            <button data-act="copyMd">Copy Markdown</button>
+          </div>
+        </div>
+        <div class="menu">
+          <button class="btn" data-menu="settingsMenu">Style ▾</button>
+          <div class="menu-pop wide" id="settingsMenu" hidden>
+            <label>Node max width <output id="maxWidthOut"></output>
+              <input type="range" id="optMaxWidth" min="0" max="600" step="20"></label>
+            <label>Horizontal spacing <output id="spacingHOut"></output>
+              <input type="range" id="optSpacingH" min="20" max="200" step="10"></label>
+            <label>Vertical spacing <output id="spacingVOut"></output>
+              <input type="range" id="optSpacingV" min="0" max="30" step="1"></label>
+            <label>Freeze branch colors at level
+              <select id="optFreeze"><option value="0">off</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+            <label class="check"><input type="checkbox" id="optRecursive"> Click toggles whole branch</label>
+            <button class="btn small" id="resetStyle">Reset to map defaults</button>
+          </div>
+        </div>
+        <button class="btn" data-act="share" title="Copy a link that contains this map">Share link</button>
+        <button class="btn" data-act="fullscreen" title="Fullscreen (Shift+F)">⤢</button>
+        <button class="btn primary" data-act="toggleEdit" id="editBtn" title="Edit (E)">Edit</button>
+      </div>
+    </div>
+
+    <div class="workspace" id="workspace">
+      <section class="editor-pane" id="editorPane" hidden>
+        <div class="editor-bar">
+          <input id="slugInput" placeholder="file-name" aria-label="File name" spellcheck="false">
+          <span class="muted">.md</span>
+          <span class="spacer"></span>
+          <span class="save-state" id="saveState"></span>
+        </div>
+        <textarea id="editor" spellcheck="false" aria-label="Markdown source"></textarea>
+        <div class="editor-foot">
+          <button class="btn small" id="insertTpl" title="Insert front matter template">Front matter</button>
+          <button class="btn small" id="formatBtn" title="Normalize indentation to 2 spaces">Tidy</button>
+          <span class="spacer"></span>
+          <button class="btn small" id="downloadBtn">Download .md</button>
+          <button class="btn small primary" id="commitBtn" title="Open GitHub with this file pre-filled, ready to commit">Save to GitHub</button>
+        </div>
+      </section>
+      <section class="map-pane" id="mapPane">
+        <svg id="mindmap"></svg>
+        <div class="map-error" id="mapError" hidden></div>
+        <div class="hint" id="hint">Click a circle to fold · Ctrl/⌘-click folds a whole branch · Scroll / drag to move</div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="helpDialog">
+    <h2>Keyboard shortcuts</h2>
+    <table>
+      <tr><td><kbd>F</kbd></td><td>Fit map to screen</td></tr>
+      <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Zoom in / out</td></tr>
+      <tr><td><kbd>0</kbd></td><td>Expand everything</td></tr>
+      <tr><td><kbd>1</kbd>–<kbd>6</kbd></td><td>Show that many levels</td></tr>
+      <tr><td><kbd>/</kbd></td><td>Find a node</td></tr>
+      <tr><td><kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>Next / previous match</td></tr>
+      <tr><td><kbd>E</kbd></td><td>Toggle editor</td></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>F</kbd></td><td>Fullscreen</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Toggle light / dark</td></tr>
+      <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Indent / outdent lines (in editor)</td></tr>
+      <tr><td><kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>S</kbd></td><td>Save draft (in editor)</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Close menus, clear search</td></tr>
+    </table>
+    <form method="dialog"><button class="btn primary">Close</button></form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="vendor/d3-7.9.0.min.js"></script>
+  <script src="vendor/markmap-view-0.18.12.js"></script>
+  <script src="vendor/markmap-lib-0.18.12.js"></script>
+  <script src="vendor/lz-string-1.5.0.min.js"></script>
+  <script src="config.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
