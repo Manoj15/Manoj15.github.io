@@ -3,6 +3,7 @@ title: Transformers
 description: Core architecture, attention math, variants and efficiency tricks for NLP and RecSys interviews.
 tags: [deep-learning, nlp, ml]
 markmap:
+  theme: midnight
   colorFreezeLevel: 2
   initialExpandLevel: 2
   maxWidth: 320

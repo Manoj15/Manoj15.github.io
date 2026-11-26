@@ -15,6 +15,27 @@
     window.MINDMAP_CONFIG || {}
   );
   const { Transformer, Markmap, deriveOptions, loadCSS, loadJS } = window.markmap;
+
+  // Theme decorations applied after each render. Self-contained on purpose:
+  // its source is also embedded in the offline HTML export.
+  function mmDecorate(mm) {
+    var color = mm.options.color;
+    mm.g.selectAll("path.markmap-link").style("--branch", function (d) { return color(d.target); });
+    var rootDepth = mm.state.data ? mm.state.data.state.depth : 0;
+    mm.g.selectAll("g.markmap-node").style("--branch", function (d) { return color(d); })
+      .attr("data-level", function (d) { return d.state.depth - rootDepth; }).each(function (d) {
+      var g = window.d3.select(this);
+      var circle = g.select(":scope > circle");
+      // Keep the fold button above the node card.
+      if (!circle.empty()) this.appendChild(circle.node());
+      var has = d.children && d.children.length && !circle.empty();
+      var cx = has ? +circle.attr("cx") : 0, cy = has ? +circle.attr("cy") : 0, folded = d.payload && d.payload.fold;
+      g.selectAll(":scope > path.mm-glyph").data(has ? [d] : []).join("path")
+        .attr("class", "mm-glyph")
+        .each(function () { this.parentNode.appendChild(this); })
+        .attr("d", "M" + (cx - 3.5) + " " + cy + "H" + (cx + 3.5) + (folded ? "M" + cx + " " + (cy - 3.5) + "V" + (cy + 3.5) : ""));
+    });
+  }
   const transformer = new Transformer();
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -81,6 +102,8 @@
   }
   function applyTheme() {
     document.documentElement.classList.toggle("markmap-dark", effectiveDark());
+    const svg = document.getElementById("mindmap");
+    if (svg) svg.classList.toggle("mmt-dark", effectiveDark());
   }
   const savedTheme = store.get("mm.theme", null);
   if (savedTheme) document.documentElement.dataset.theme = savedTheme;
@@ -247,8 +270,8 @@ Follow mindmaps/README.md. In short:
   description: <one sentence>
   tags: [tag1, tag2]
   markmap:
-    colorFreezeLevel: 2
-    initialExpandLevel: 3
+    theme: studio   # or pastel, midnight, paper, mono, classic
+    initialExpandLevel: 2
   ---
 - One "# " heading = the root. "## " = main branches, "### " = sub-branches.
 - Below headings, nest "- " bullets (2-space indent) for deeper detail.
@@ -267,51 +290,82 @@ Topic: `;
   let current = null; // { kind: 'published'|'draft'|'shared', slug, md, draftId, base }
   let fmOptions = {};
   let rendered = { md: null };
-  const DEFAULT_STYLE = { maxWidth: 340, spacingHorizontal: 96, spacingVertical: 10, colorFreezeLevel: 0, toggleRecursively: false };
-  // Node typography by depth (markmap numbers the root 1, main branches 2). Shared by the live view and every export so they match.
-  // Sizes and padding are read by markmap when it measures nodes; colours come from --c,
-  // the branch colour copied from each node's line (see paintNodes).
-  const NODE_CSS = [
-    '.markmap{--markmap-font:400 14.5px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--markmap-a-color:var(--accent,#4a4ac8);--markmap-a-hover-color:var(--accent,#4a4ac8);--markmap-highlight-bg:#ffe58f}',
-    '.markmap-foreign a{text-decoration:none;font-weight:500;border-bottom:1px solid color-mix(in srgb,currentColor 35%,transparent)}',
-    '.markmap-foreign strong{font-weight:650}',
-    '.markmap-foreign code{font-size:.88em;padding:.1em .35em;border-radius:4px}',
-    '.markmap-foreign mark{color:#1d1d27;border-radius:3px;padding:0 .2em}',
-    '.markmap-node>foreignObject>div>div{padding:2px 4px 3px}',
-    '.markmap-node[data-depth="1"]>foreignObject>div>div{font-size:22px;line-height:1.25;font-weight:750;letter-spacing:-.01em;padding:10px 18px;border-radius:12px;background:var(--c,#4a4ac8);color:#fff}',
-    '.markmap-node[data-depth="2"]>foreignObject>div>div{font-size:17px;line-height:1.3;font-weight:650;padding:7px 15px;border-radius:999px;background:color-mix(in srgb,var(--c,#4a4ac8) 16%,var(--map-bg,#fff));box-shadow:inset 0 0 0 1.5px var(--c,#4a4ac8)}',
-    '.markmap-node[data-depth="3"]>foreignObject>div>div{font-size:15.5px;line-height:1.35;font-weight:600}',
-    '.markmap-node[data-depth="1"]>line,.markmap-node[data-depth="2"]>line{stroke-opacity:0}',
-    '.markmap-node>circle{stroke-width:2px}',
-  ].join("\n");
-  const LINE_WIDTHS = [3.2, 3.2, 3, 2.2, 1.4]; // indexed by markmap depth (root = 1)
-  const lineWidthByDepth = (d) => LINE_WIDTHS[Math.min(d.state.depth, LINE_WIDTHS.length - 1)];
-  document.head.appendChild(Object.assign(document.createElement("style"), { textContent: NODE_CSS }));
-  function paintNodes() {
-    svgEl.querySelectorAll("g.markmap-node").forEach((g) => {
-      const line = g.querySelector(":scope > line");
-      const c = line && line.getAttribute("stroke");
-      if (c && g.style.getPropertyValue("--c") !== c) g.style.setProperty("--c", c);
-    });
-  }
+  const DEFAULT_STYLE = { maxWidth: 0, spacingHorizontal: 80, spacingVertical: 5, colorFreezeLevel: 0, toggleRecursively: false };
   let userStyle = store.get("mm.style", {});
+
+  // Themes: CSS lives in assets/themes.css (scoped to svg.mmt-<id>); these are
+  // the layout defaults each theme needs. Front matter and the Style menu
+  // still override them. `cards` themes attach links to the node centre.
+  const CARD_LAYOUT = { anchor: "middle", paddingX: 0, spacingHorizontal: 64, spacingVertical: 14, maxWidth: 280, colorFreezeLevel: 2 };
+  const THEMES = {
+    studio: {
+      name: "Studio", cards: true, preview: ["#fbfbf9", "#2e5c8a", "#cfe0f1", "#dcebd0", "#f6dfc8"],
+      defaults: { ...CARD_LAYOUT, color: ["#2e5c8a", "#4a86c5", "#6aa84f", "#e69138", "#8e7cc3", "#45a5a0", "#d5688a", "#c9a227", "#5c6bc0"] },
+    },
+    pastel: {
+      name: "Pastel", cards: true, preview: ["#f3eefe", "#a855f7", "#fbcfe8", "#bae6fd", "#bbf7d0"],
+      defaults: { ...CARD_LAYOUT, spacingVertical: 12, maxWidth: 260, color: ["#8b5cf6", "#ec4899", "#0ea5e9", "#22c55e", "#f59e0b", "#14b8a6", "#f43f5e", "#6366f1"] },
+    },
+    midnight: {
+      name: "Midnight", cards: true, preview: ["#0b1020", "#26306b", "#22d3ee", "#a78bfa", "#f472b6"],
+      defaults: { ...CARD_LAYOUT, color: ["#7aa2ff", "#22d3ee", "#a78bfa", "#f472b6", "#34d399", "#fbbf24", "#fb7185", "#60a5fa"] },
+    },
+    paper: {
+      name: "Paper", cards: false, preview: ["#f7f1e3", "#3a2f24", "#9a3b1f", "#3d6b4f", "#2f4f7a"],
+      defaults: { spacingHorizontal: 90, spacingVertical: 8, maxWidth: 300, colorFreezeLevel: 2, color: ["#3a2f24", "#9a3b1f", "#3d6b4f", "#2f4f7a", "#8a5a12", "#6b3d6e", "#4f6b2a", "#7a2f3a"] },
+    },
+    mono: {
+      name: "Mono", cards: true, preview: ["#ffffff", "#111111", "#ffffff", "#111111", "#ffffff"],
+      defaults: { ...CARD_LAYOUT, spacingVertical: 16, maxWidth: 260, color: ["#111111"] },
+    },
+    classic: {
+      name: "Classic", cards: false, preview: ["#ffffff", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"],
+      defaults: { maxWidth: 340, spacingHorizontal: 96, spacingVertical: 10, paddingX: 12, nodeMinHeight: 18 },
+      lineWidths: [3.2, 3.2, 3, 2.2, 1.4], // by markmap depth (root = 1)
+      middleUpToDepth: 2, // root and branch pills attach in the middle; deeper nodes keep the underline
+    },
+  };
+  const DEFAULT_THEME = "studio";
+  function themeId() {
+    const t = userStyle.theme || fmOptions.theme;
+    return THEMES[t] ? t : DEFAULT_THEME;
+  }
+  function themeDefaults() { return THEMES[themeId()].defaults; }
 
   function effectiveStyle() {
     const base = { ...DEFAULT_STYLE };
-    for (const k of Object.keys(base)) if (fmOptions[k] != null) base[k] = fmOptions[k];
-    return { ...base, ...userStyle };
+    const td = themeDefaults();
+    for (const k of Object.keys(base)) {
+      if (td[k] != null) base[k] = td[k];
+      if (fmOptions[k] != null) base[k] = fmOptions[k];
+    }
+    const { theme, ...rest } = userStyle;
+    return { ...base, ...rest };
   }
   function buildOptions() {
     const s = effectiveStyle();
-    const json = { ...fmOptions, ...s };
-    const opts = deriveOptions(json);
+    const td = themeDefaults();
+    const json = { ...td, ...fmOptions, ...s };
+    // Start from markmap's defaults so switching themes never keeps stale values.
+    const opts = { ...window.markmap.defaultOptions, ...deriveOptions(json) };
     opts.toggleRecursively = !!s.toggleRecursively;
     opts.duration = 350;
     opts.maxInitialScale = 1.4;
-    opts.paddingX = 12;
-    opts.nodeMinHeight = 18;
-    opts.lineWidth = lineWidthByDepth;
+    opts.anchor = td.anchor || "bottom";
+    opts.paddingX = td.paddingX != null ? td.paddingX : window.markmap.defaultOptions.paddingX;
+    const lw = THEMES[themeId()].lineWidths;
+    if (lw) opts.lineWidth = (d) => lw[Math.min(d.state.depth, lw.length - 1)];
+    const mid = THEMES[themeId()].middleUpToDepth;
+    if (mid) opts.anchor = (d) => (d.state.depth <= mid ? "middle" : "bottom");
     return opts;
+  }
+  function applySvgTheme() {
+    const id = themeId();
+    Object.keys(THEMES).forEach((t) => svgEl.classList.toggle(`mmt-${t}`, t === id));
+    svgEl.classList.add("mmt");
+    svgEl.classList.toggle("mmt-cards", !!THEMES[id].cards);
+    svgEl.classList.toggle("mmt-dark", effectiveDark());
+    $$("#themeMenu [data-theme-id]").forEach((b) => b.classList.toggle("on", b.dataset.themeId === id));
   }
 
   function loadAssets(features) {
@@ -326,12 +380,14 @@ Topic: `;
       const { root, features, frontmatter } = transformer.transform(md);
       loadAssets(features);
       fmOptions = (frontmatter && frontmatter.markmap) || {};
+      applySvgTheme();
       const opts = buildOptions();
       if (!mm) {
         mm = Markmap.create(svgEl, opts);
-        // Re-apply search marks after every redraw (markmap resets node classes).
+        // After every redraw: theme decorations, and re-apply search marks
+        // (markmap resets node classes).
         const render = mm.renderData.bind(mm);
-        mm.renderData = async (...args) => { const r = await render(...args); paintNodes(); markHits(); return r; };
+        mm.renderData = async (...args) => { const r = await render(...args); mmDecorate(mm); markHits(); return r; };
       }
       if (keepFold && mm.state.data) carryFold(mm.state.data, root);
       await mm.setData(root, opts);
@@ -450,7 +506,6 @@ Topic: `;
     clone.setAttribute("width", w);
     clone.setAttribute("height", h);
     clone.setAttribute("viewBox", `${box.x - pad} ${box.y - pad} ${w} ${h}`);
-    clone.removeAttribute("style");
     const cg = clone.querySelector(":scope > g");
     cg.removeAttribute("transform");
     cg.querySelectorAll(".markmap-highlight > *").forEach((el) => el.remove());
@@ -460,13 +515,23 @@ Topic: `;
     const v = (name) => cs.getPropertyValue(name).trim();
     const bg = getComputedStyle(svg.parentElement).backgroundColor || "#fff";
     const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
-    style.textContent = `${NODE_CSS}\n.markmap{--map-bg:${bg};--markmap-text-color:${v("--markmap-text-color")};--markmap-circle-open-bg:${v("--markmap-circle-open-bg")};--markmap-font:${v("--markmap-font")};--markmap-code-bg:${v("--markmap-code-bg")};--markmap-code-color:${v("--markmap-code-color")};--markmap-a-color:${v("--markmap-a-color")};}`;
+    style.textContent = `.markmap{--markmap-text-color:${v("--markmap-text-color")};--markmap-circle-open-bg:${v("--markmap-circle-open-bg")};--markmap-font:${v("--markmap-font")};--markmap-code-bg:${v("--markmap-code-bg")};--markmap-code-color:${v("--markmap-code-color")};--markmap-a-color:${v("--markmap-a-color")};}`;
     clone.appendChild(style);
-    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", box.x - pad); rect.setAttribute("y", box.y - pad);
-    rect.setAttribute("width", w); rect.setAttribute("height", h); rect.setAttribute("fill", bg);
-    clone.insertBefore(rect, cg);
+    const themeStyle = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    themeStyle.textContent = themeCss();
+    clone.appendChild(themeStyle);
+    const svgBg = getComputedStyle(svg);
+    if (svgBg.backgroundImage === "none" && /rgba\(0, 0, 0, 0\)|transparent/.test(svgBg.backgroundColor)) {
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", box.x - pad); rect.setAttribute("y", box.y - pad);
+      rect.setAttribute("width", w); rect.setAttribute("height", h); rect.setAttribute("fill", bg);
+      clone.insertBefore(rect, cg);
+    }
     return { text: new XMLSerializer().serializeToString(clone), w, h };
+  }
+  function themeCss() {
+    const sheet = Array.from(document.styleSheets).find((s) => s.href && /themes\.css/.test(s.href));
+    try { return sheet ? Array.from(sheet.cssRules).map((r) => r.cssText).join("\n") : ""; } catch { return ""; }
   }
   function exportSvg() {
     const { text } = buildSvg();
@@ -500,19 +565,23 @@ Topic: `;
     toast("Building offline HTML…");
     try {
       const [d3js, viewjs, libjs] = await Promise.all([
-        vendor("vendor/d3-7.9.0.min.js"), vendor("vendor/markmap-view-0.18.12.js"), vendor("vendor/markmap-lib-0.18.12.js"),
+        vendor("vendor/d3-7.9.0.min.js"), vendor("vendor/markmap-view-0.18.12-mms.js"), vendor("vendor/markmap-lib-0.18.12.js"),
       ]);
       const inline = (s) => s.replace(/<\/script/gi, "<\\/script");
       const md = currentMd();
       const title = $("#topbarTitle").textContent || "Mind map";
       const dark = effectiveDark();
+      const svgClass = svgEl.getAttribute("class").split(/\s+/).filter((c) => /^mmt/.test(c)).join(" ");
+      const optsJson = JSON.stringify({ ...themeDefaults(), ...effectiveStyle() });
+      const lineWidths = JSON.stringify(THEMES[themeId()].lineWidths || null);
+      const middleUpTo = JSON.stringify(THEMES[themeId()].middleUpToDepth || 0);
       const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <style>html,body{margin:0;height:100%;background:${dark ? "#16161d" : "#fff"}}svg{width:100%;height:100%;display:block}
-${NODE_CSS}
-.markmap{--map-bg:${dark ? "#16161d" : "#fff"}}${dark ? ".markmap{--markmap-text-color:#ececf3;--markmap-circle-open-bg:#16161d}" : ""}</style>
-</head><body${dark ? ' class="markmap-dark"' : ""}><svg id="mm"></svg>
+.markmap{--markmap-font:400 15px/20px ui-sans-serif,system-ui,sans-serif}${dark ? ".markmap{--markmap-text-color:#ececf3;--markmap-circle-open-bg:#16161d}" : ""}
+${themeCss()}</style>
+</head><body${dark ? ' class="markmap-dark"' : ""}><svg id="mm" class="${svgClass}"></svg>
 <script>${inline(d3js)}<\/script>
 <script>${inline(viewjs)}<\/script>
 <script>${inline(libjs)}<\/script>
@@ -523,16 +592,18 @@ ${NODE_CSS}
   var a = t.getUsedAssets(r.features);
   if (a.styles) M.loadCSS(a.styles);
   if (a.scripts) M.loadJS(a.scripts, { getMarkmap: function(){ return window.markmap; } });
-  var opts = M.deriveOptions(Object.assign({}, (r.frontmatter && r.frontmatter.markmap) || {}, ${JSON.stringify(effectiveStyle())}));
-  var LW = ${JSON.stringify(LINE_WIDTHS)};
-  opts.paddingX = 12; opts.nodeMinHeight = 18;
-  opts.lineWidth = function(d){ return LW[Math.min(d.state.depth, LW.length - 1)]; };
-  var mm = M.Markmap.create("#mm", opts);
+  var json = Object.assign({}, ${optsJson}, (r.frontmatter && r.frontmatter.markmap) || {}, ${JSON.stringify((() => { const { theme, ...u } = userStyle; return u; })())});
+  var opts = M.deriveOptions(json);
+  if (json.anchor) opts.anchor = json.anchor;
+  if (json.paddingX != null) opts.paddingX = json.paddingX;
+  var LW = ${lineWidths};
+  if (LW) opts.lineWidth = function (d) { return LW[Math.min(d.state.depth, LW.length - 1)]; };
+  var MID = ${middleUpTo};
+  if (MID) opts.anchor = function (d) { return d.state.depth <= MID ? "middle" : "bottom"; };
+  var mmDecorate = ${mmDecorate.toString()};
+  var mm = new M.Markmap("#mm", opts);
   var render = mm.renderData.bind(mm);
-  mm.renderData = function(){ return render.apply(null, arguments).then(function(x){
-    document.querySelectorAll("g.markmap-node").forEach(function(g){
-      var l = g.querySelector(":scope > line"); if (l) g.style.setProperty("--c", l.getAttribute("stroke"));
-    }); return x; }); };
+  mm.renderData = function(){ return render.apply(null, arguments).then(function(x){ mmDecorate(mm); return x; }); };
   mm.setData(r.root).then(function(){ mm.fit(); });
 })();
 <\/script></body></html>`;
@@ -581,7 +652,28 @@ ${NODE_CSS}
       applyStyle();
     });
   });
-  $("#resetStyle").addEventListener("click", () => { userStyle = {}; syncStyleControls(); applyStyle(); });
+  $("#resetStyle").addEventListener("click", () => { userStyle = {}; applySvgTheme(); syncStyleControls(); applyStyle(); });
+
+  // ---------- theme picker ----------
+  $("#themeMenu").innerHTML = Object.entries(THEMES).map(([id, t]) => {
+    const [bg, ...dots] = t.preview;
+    const pills = dots.map((c, i) => `<i style="background:${c};width:${[30, 22, 26, 18][i]}px"></i>`).join("");
+    return `<button type="button" data-theme-id="${id}" title="${t.name} theme"><span class="swatch" style="background:${bg}">${pills}</span>${t.name}</button>`;
+  }).join("") + `<button type="button" class="theme-default" data-theme-id="">Use the map's own theme</button>`;
+  $("#themeMenu").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-theme-id]");
+    if (!b) return;
+    e.stopPropagation();
+    // Picking a theme resets per-theme layout tweaks so its defaults apply.
+    userStyle = b.dataset.themeId ? { theme: b.dataset.themeId, toggleRecursively: userStyle.toggleRecursively } : {};
+    store.set("mm.style", userStyle);
+    applySvgTheme();
+    syncStyleControls();
+    if (!mm) return;
+    mm.setOptions(buildOptions());
+    await mm.renderData();
+    await mm.fit();
+  });
 
   // ---------- editor ----------
   const editor = $("#editor");
@@ -688,7 +780,7 @@ ${NODE_CSS}
   $("#insertTpl").addEventListener("click", () => {
     if (/^---\s*\n/.test(editor.value)) { toast("This map already has front matter"); return; }
     const title = safeMeta(editor.value).title;
-    const fm = `---\ntitle: ${title}\ndescription: \ntags: []\nmarkmap:\n  colorFreezeLevel: 2\n  initialExpandLevel: 3\n---\n\n`;
+    const fm = `---\ntitle: ${title}\ndescription: \ntags: []\nmarkmap:\n  theme: studio\n  initialExpandLevel: 3\n---\n\n`;
     replaceRange(0, 0, fm, fm.indexOf("description: ") + 13, fm.indexOf("description: ") + 13);
   });
   $("#formatBtn").addEventListener("click", () => {
@@ -796,7 +888,7 @@ title: My new map
 description: What this map is about
 tags: [notes]
 markmap:
-  colorFreezeLevel: 2
+  theme: studio
   initialExpandLevel: 3
 ---
 

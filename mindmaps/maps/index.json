@@ -10,7 +10,7 @@
         "product-ds"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     },
     {
       "slug": "getting-started",
@@ -19,8 +19,20 @@
       "tags": [
         "guide"
       ],
+      "nodes": 60,
+      "updated": "2026-11-26T23:49:54+00:00"
+    },
+    {
+      "slug": "machine-learning",
+      "title": "Machine Learning",
+      "description": "The big picture of ML, from learning paradigms to neural networks and a typical project workflow.",
+      "tags": [
+        "ml",
+        "deep-learning",
+        "guide"
+      ],
       "nodes": 50,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     },
     {
       "slug": "ml-approaches",
@@ -34,7 +46,7 @@
         "research"
       ],
       "nodes": 193,
-      "updated": "2026-11-26T15:45:02-08:00"
+      "updated": null
     },
     {
       "slug": "recsys-system-design",
@@ -46,7 +58,7 @@
         "ml"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     },
     {
       "slug": "transformers",
@@ -58,7 +70,7 @@
         "ml"
       ],
       "nodes": 58,
-      "updated": "2026-11-26T23:31:14Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     }
   ]
 }

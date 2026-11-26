@@ -3,6 +3,7 @@ title: A/B Testing
 description: Design, analysis and pitfalls of online controlled experiments, as asked in product DS interviews.
 tags: [statistics, experimentation, product-ds]
 markmap:
+  theme: studio
   colorFreezeLevel: 2
   initialExpandLevel: 2
   maxWidth: 320

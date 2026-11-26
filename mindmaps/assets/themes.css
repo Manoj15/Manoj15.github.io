@@ -1,0 +1,176 @@
+/* Mind Map Studio themes.
+ * Every rule is scoped to a class on the <svg> itself (svg.mmt-<id>), so this
+ * file can be copied into exported SVG / HTML files and still work there.
+ * `.mmt-dark` is added to the svg when the page is in dark mode.
+ * Per node, app.js sets `--branch` (the branch colour) on each g.markmap-node.
+ */
+
+/* ---------- shared pieces ---------- */
+svg.mmt { --mmt-toggle: #1a6ff0; }
+svg.mmt .mm-glyph { display: none; pointer-events: none; fill: none; stroke-linecap: round; }
+svg.mmt-cards .markmap-foreign { overflow: visible; }
+svg.mmt-cards .markmap-node > line { display: none; }
+svg.mmt-cards .markmap-foreign > div > div {
+  padding: 7px 14px;
+  border-radius: 10px;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+svg.mmt-cards .markmap-node:hover > .markmap-foreign > div > div { box-shadow: var(--mmt-shadow-hover, 0 4px 14px rgb(16 24 40 / .14)); }
+svg.mmt-cards .markmap-node > circle { r: 8px; stroke-width: 1.5px; cursor: pointer; }
+svg.mmt-cards .mm-glyph { display: block; stroke-width: 1.8px; }
+svg.mmt-cards .markmap-foreign img { max-width: 100%; border-radius: 6px; }
+
+/* ---------- Studio: dotted canvas, pastel branches, white cards ---------- */
+svg.mmt-studio {
+  --mmt-bg: #fbfbf9; --mmt-dot: #d6d7dc; --mmt-link: #b3b8c2; --mmt-text: #1f2430;
+  --mmt-card: #ffffff; --mmt-card-border: #e3e5ea; --mmt-root: #2e5c8a; --mmt-root-text: #ffffff;
+  --mmt-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 2px 8px rgb(16 24 40 / .06);
+  --mmt-tint: 20%;
+  background-color: var(--mmt-bg);
+  background-image: radial-gradient(circle, var(--mmt-dot) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+svg.mmt-studio.mmt-dark {
+  --mmt-bg: #15171c; --mmt-dot: #2c2f37; --mmt-link: #4d535f; --mmt-text: #e7e9ef;
+  --mmt-card: #1f2229; --mmt-card-border: #313541; --mmt-root: #3b6ea3; --mmt-toggle: #4c8dff;
+  --mmt-shadow: 0 1px 2px rgb(0 0 0 / .4), 0 2px 8px rgb(0 0 0 / .3);
+  --mmt-tint: 26%;
+}
+svg.mmt-studio.markmap {
+  --markmap-text-color: var(--mmt-text);
+  --markmap-font: 400 15px/21px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --markmap-a-color: #1a6ff0;
+}
+svg.mmt-studio .markmap-link { stroke: var(--mmt-link); stroke-width: 1.5px; }
+svg.mmt-studio .markmap-foreign > div > div {
+  background: var(--mmt-card); border: 1px solid var(--mmt-card-border); box-shadow: var(--mmt-shadow);
+}
+svg.mmt-studio .markmap-node[data-level="1"] > .markmap-foreign > div > div {
+  background: color-mix(in srgb, var(--branch) var(--mmt-tint), var(--mmt-card));
+  border-color: color-mix(in srgb, var(--branch) 30%, var(--mmt-card));
+  font-weight: 600;
+}
+svg.mmt-studio .markmap-node[data-level="0"] > .markmap-foreign > div > div {
+  background: var(--mmt-root); border-color: transparent; color: var(--mmt-root-text);
+  font: 600 25px/32px Georgia, "Iowan Old Style", "Palatino Linotype", serif; padding: 12px 22px;
+  box-shadow: 0 2px 4px rgb(16 24 40 / .12), 0 6px 18px rgb(46 92 138 / .25);
+}
+svg.mmt-studio .markmap-node > circle { fill: var(--mmt-card); stroke: var(--mmt-toggle); }
+svg.mmt-studio .markmap-fold > circle { fill: var(--mmt-toggle); }
+svg.mmt-studio .mm-glyph { stroke: var(--mmt-toggle); }
+svg.mmt-studio .markmap-fold > .mm-glyph { stroke: #fff; }
+
+/* ---------- Pastel: soft gradient, rounded pills in branch colours ---------- */
+svg.mmt-pastel {
+  --mmt-text: #2b2440; --mmt-card: #ffffff; --mmt-tint: 26%;
+  background: linear-gradient(135deg, #fdf2f8 0%, #eef2ff 50%, #ecfeff 100%);
+}
+svg.mmt-pastel.mmt-dark {
+  --mmt-text: #eeeaf8; --mmt-card: #231f33; --mmt-tint: 38%;
+  background: linear-gradient(135deg, #1d1528 0%, #151a2e 50%, #10222a 100%);
+}
+svg.mmt-pastel.markmap {
+  --markmap-text-color: var(--mmt-text);
+  --markmap-font: 500 15px/21px ui-rounded, "SF Pro Rounded", "Nunito", ui-sans-serif, system-ui, sans-serif;
+}
+svg.mmt-pastel .markmap-link { stroke-width: 3px; stroke-opacity: .55; stroke-linecap: round; }
+svg.mmt-pastel .markmap-foreign > div > div {
+  border-radius: 999px; padding: 6px 16px;
+  background: color-mix(in srgb, var(--branch) var(--mmt-tint), var(--mmt-card));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--branch) 40%, transparent), 0 3px 10px color-mix(in srgb, var(--branch) 18%, transparent);
+}
+svg.mmt-pastel .markmap-node[data-level="0"] > .markmap-foreign > div > div {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #fff; font-weight: 700; font-size: 22px; line-height: 30px; padding: 12px 24px;
+}
+svg.mmt-pastel .markmap-node[data-level="1"] > .markmap-foreign > div > div { font-weight: 700; }
+svg.mmt-pastel .markmap-node > circle { fill: var(--mmt-card); stroke: var(--branch); }
+svg.mmt-pastel .markmap-fold > circle { fill: var(--branch); }
+svg.mmt-pastel .mm-glyph { stroke: var(--branch); }
+svg.mmt-pastel .markmap-fold > .mm-glyph { stroke: #fff; }
+
+/* ---------- Midnight: deep navy grid, glowing outlined nodes ---------- */
+svg.mmt-midnight {
+  --mmt-text: #e6ecff;
+  background-color: #0b1020;
+  background-image:
+    linear-gradient(rgb(120 140 255 / .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(120 140 255 / .07) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+svg.mmt-midnight.markmap {
+  --markmap-text-color: var(--mmt-text); --markmap-code-bg: #1a2140; --markmap-code-color: #c8d3ff; --markmap-a-color: #7cc4ff;
+  --markmap-font: 400 15px/21px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+svg.mmt-midnight .markmap-link { stroke-width: 2px; filter: drop-shadow(0 0 3px var(--branch)); }
+svg.mmt-midnight .markmap-foreign > div > div {
+  background: rgb(14 20 42 / .85);
+  border: 1px solid color-mix(in srgb, var(--branch) 75%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--branch) 35%, transparent), inset 0 0 10px color-mix(in srgb, var(--branch) 12%, transparent);
+}
+svg.mmt-midnight .markmap-node[data-level="0"] > .markmap-foreign > div > div {
+  font-size: 22px; line-height: 30px; font-weight: 700; padding: 12px 22px; letter-spacing: .02em;
+  background: radial-gradient(circle at 30% 20%, #26306b, #111735);
+}
+svg.mmt-midnight .markmap-node[data-level="1"] > .markmap-foreign > div > div { font-weight: 600; color: color-mix(in srgb, var(--branch) 45%, #ffffff); }
+svg.mmt-midnight .markmap-node > circle { fill: #0b1020; stroke: var(--branch); }
+svg.mmt-midnight .markmap-fold > circle { fill: var(--branch); }
+svg.mmt-midnight .mm-glyph { stroke: var(--branch); }
+svg.mmt-midnight .markmap-fold > .mm-glyph { stroke: #0b1020; }
+
+/* ---------- Paper: warm notebook, ink and serif, underlined branches ---------- */
+svg.mmt-paper {
+  background-color: #f7f1e3;
+  background-image: linear-gradient(rgb(120 100 70 / .09) 1px, transparent 1px);
+  background-size: 100% 26px;
+}
+svg.mmt-paper.markmap {
+  --markmap-text-color: #3a2f24; --markmap-circle-open-bg: #f7f1e3; --markmap-code-bg: #efe5cf; --markmap-code-color: #5a4630; --markmap-a-color: #9a3b1f;
+  --markmap-font: 400 16px/22px Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+}
+svg.mmt-paper .markmap-link, svg.mmt-paper .markmap-node > line { stroke-opacity: .75; }
+svg.mmt-paper .markmap-node[data-level="0"] .markmap-foreign > div > div { font-size: 24px; line-height: 30px; font-style: italic; }
+svg.mmt-paper .markmap-node[data-level="1"] .markmap-foreign > div > div { font-weight: 700; font-variant: small-caps; letter-spacing: .03em; }
+
+/* ---------- Mono: black & white boxes, monospace ---------- */
+svg.mmt-mono { background: #ffffff; }
+svg.mmt-mono.mmt-dark { background: #0e0e0e; }
+svg.mmt-mono.markmap {
+  --mmt-ink: #111111; --mmt-paper: #ffffff;
+  --markmap-text-color: var(--mmt-ink); --markmap-code-bg: #eeeeee; --markmap-code-color: #111; --markmap-a-color: #111;
+  --markmap-font: 400 14px/20px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+svg.mmt-mono.mmt-dark.markmap { --mmt-ink: #eeeeee; --mmt-paper: #0e0e0e; --markmap-code-bg: #222; --markmap-code-color: #eee; --markmap-a-color: #eee; }
+svg.mmt-mono .markmap-link { stroke: var(--mmt-ink); stroke-width: 1px; }
+svg.mmt-mono .markmap-foreign > div > div { border: 1.5px solid var(--mmt-ink); border-radius: 0; background: var(--mmt-paper); padding: 6px 12px; box-shadow: 3px 3px 0 var(--mmt-ink); }
+svg.mmt-mono .markmap-node[data-level="0"] > .markmap-foreign > div > div { background: var(--mmt-ink); color: var(--mmt-paper); font-weight: 700; font-size: 18px; line-height: 26px; padding: 10px 18px; }
+svg.mmt-mono .markmap-node[data-level="1"] > .markmap-foreign > div > div { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+svg.mmt-mono .markmap-node > circle { r: 7px; fill: var(--mmt-paper); stroke: var(--mmt-ink); }
+svg.mmt-mono .markmap-fold > circle { fill: var(--mmt-ink); }
+svg.mmt-mono .mm-glyph { stroke: var(--mmt-ink); }
+svg.mmt-mono .markmap-fold > .mm-glyph { stroke: var(--mmt-paper); }
+
+/* ---------- Classic: markmap layout with depth-based typography ----------
+ * Solid root pill, tinted branch pills in the branch colour, bold sub-branches.
+ * (Originally the app-wide "Restyle mind maps for readability" look.) */
+svg.mmt-classic { --mmt-card: #ffffff; }
+svg.mmt-classic.mmt-dark { --mmt-card: #16161d; }
+svg.mmt-classic.markmap {
+  --markmap-font: 400 14.5px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --markmap-a-color: #4a4ac8; --markmap-a-hover-color: #4a4ac8; --markmap-highlight-bg: #ffe58f;
+}
+svg.mmt-classic .markmap-foreign a { text-decoration: none; font-weight: 500; border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent); }
+svg.mmt-classic .markmap-foreign strong { font-weight: 650; }
+svg.mmt-classic .markmap-foreign code { font-size: .88em; padding: .1em .35em; border-radius: 4px; }
+svg.mmt-classic .markmap-foreign mark { color: #1d1d27; border-radius: 3px; padding: 0 .2em; }
+svg.mmt-classic .markmap-node > foreignObject > div > div { padding: 2px 4px 3px; }
+svg.mmt-classic .markmap-node[data-level="0"] > foreignObject > div > div {
+  font-size: 22px; line-height: 1.25; font-weight: 750; letter-spacing: -.01em; padding: 10px 18px; border-radius: 12px;
+  background: var(--branch, #4a4ac8); color: #fff;
+}
+svg.mmt-classic .markmap-node[data-level="1"] > foreignObject > div > div {
+  font-size: 17px; line-height: 1.3; font-weight: 650; padding: 7px 15px; border-radius: 999px;
+  background: color-mix(in srgb, var(--branch, #4a4ac8) 16%, var(--mmt-card)); box-shadow: inset 0 0 0 1.5px var(--branch, #4a4ac8);
+}
+svg.mmt-classic .markmap-node[data-level="2"] > foreignObject > div > div { font-size: 15.5px; line-height: 1.35; font-weight: 600; }
+svg.mmt-classic .markmap-node[data-level="0"] > line, svg.mmt-classic .markmap-node[data-level="1"] > line { stroke-opacity: 0; }
+svg.mmt-classic .markmap-node > circle { stroke-width: 2px; }

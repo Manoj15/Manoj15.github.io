@@ -3,6 +3,7 @@ title: Recommender System Design
 description: End-to-end blueprint for an ML system design interview on recommendations.
 tags: [recsys, system-design, ml]
 markmap:
+  theme: pastel
   colorFreezeLevel: 2
   initialExpandLevel: 2
   maxWidth: 300

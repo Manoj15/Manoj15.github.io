@@ -1,3 +1,7 @@
+/* markmap-view 0.18.12, patched for Mind Map Studio: adds option
+ * `anchor: "middle"` (or a function of the node returning "middle" or
+ * "bottom") so links and fold circles attach to the vertical centre of a node
+ * (used by the card themes). Default behaviour unchanged. */
 (function(exports, d32) {
   "use strict";
   class Hook {
@@ -336,6 +340,7 @@
     maxInitialScale: 2,
     scrollForPan: isMacintosh,
     initialExpandLevel: -1,
+    anchor: "bottom",
     zoom: true,
     pan: true,
     toggleRecursively: false,
@@ -1145,7 +1150,8 @@
       return rect;
     }
     async renderData(originData) {
-      const { paddingX, autoFit, color, maxWidth, lineWidth } = this.options;
+      const { paddingX, autoFit, color, maxWidth, lineWidth, anchor } = this.options;
+      const anchorY = (d) => (typeof anchor === "function" ? anchor(d) : anchor) === "middle" ? d.state.rect.height / 2 : d.state.rect.height + lineWidth(d) / 2;
       const rootNode = this.state.data;
       if (!rootNode) return;
       const nodeMap = {};
@@ -1279,13 +1285,13 @@
       );
       this.transition(mmLineExit).attr("x1", (d) => d.state.rect.width).attr("stroke-width", 0);
       mmLineEnter.attr("x1", (d) => d.state.rect.width).attr("x2", (d) => d.state.rect.width);
-      mmLineMerge.attr("y1", (d) => d.state.rect.height + lineWidth(d) / 2).attr("y2", (d) => d.state.rect.height + lineWidth(d) / 2);
+      mmLineMerge.attr("y1", anchorY).attr("y2", anchorY);
       this.transition(mmLineMerge).attr("x1", -1).attr("x2", (d) => d.state.rect.width + 2).attr("stroke", (d) => color(d)).attr("stroke-width", lineWidth);
       const mmCircleExit = mmGExit.selectAll(
         childSelector("circle")
       );
       this.transition(mmCircleExit).attr("r", 0).attr("stroke-width", 0);
-      mmCircleMerge.attr("cx", (d) => d.state.rect.width).attr("cy", (d) => d.state.rect.height + lineWidth(d) / 2);
+      mmCircleMerge.attr("cx", (d) => d.state.rect.width).attr("cy", anchorY);
       this.transition(mmCircleMerge).attr("r", 6).attr("stroke-width", "1.5");
       this.transition(mmFoExit).style("opacity", 0);
       mmFoMerge.attr("width", (d) => Math.max(0, d.state.rect.width - paddingX * 2)).attr("height", (d) => d.state.rect.height);
@@ -1303,11 +1309,11 @@
         const origTarget = d.target;
         const source = [
           origSource.state.rect.x + origSource.state.rect.width,
-          origSource.state.rect.y + origSource.state.rect.height + lineWidth(origSource) / 2
+          origSource.state.rect.y + anchorY(origSource)
         ];
         const target = [
           origTarget.state.rect.x,
-          origTarget.state.rect.y + origTarget.state.rect.height + lineWidth(origTarget) / 2
+          origTarget.state.rect.y + anchorY(origTarget)
         ];
         return linkShape({ source, target });
       });
