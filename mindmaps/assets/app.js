@@ -287,6 +287,15 @@ Topic: `;
   // ---------- map view state ----------
   const svgEl = $("#mindmap");
   let mm = null;
+  const draw = window.MindMapDraw.create({ svg: svgEl, pane: $("#mapPane"), toast, hint: $("#hint") });
+  // Drawings are stored per map: published maps and their drafts share a key.
+  function drawKey(c) {
+    if (!c) return null;
+    if (c.kind === "published") return "map:" + c.slug;
+    if (c.base) return "map:" + c.base;
+    if (c.kind === "shared") return "share:" + c.slug;
+    return "draft:" + c.draftId;
+  }
   let current = null; // { kind: 'published'|'draft'|'shared', slug, md, draftId, base }
   let fmOptions = {};
   let rendered = { md: null };
@@ -384,10 +393,11 @@ Topic: `;
       const opts = buildOptions();
       if (!mm) {
         mm = Markmap.create(svgEl, opts);
+        draw.attach(mm);
         // After every redraw: theme decorations, and re-apply search marks
         // (markmap resets node classes).
         const render = mm.renderData.bind(mm);
-        mm.renderData = async (...args) => { const r = await render(...args); mmDecorate(mm); markHits(); return r; };
+        mm.renderData = async (...args) => { const r = await render(...args); mmDecorate(mm); draw.raise(); markHits(); return r; };
       }
       if (keepFold && mm.state.data) carryFold(mm.state.data, root);
       await mm.setData(root, opts);
@@ -510,6 +520,7 @@ Topic: `;
     cg.removeAttribute("transform");
     cg.querySelectorAll(".markmap-highlight > *").forEach((el) => el.remove());
     cg.querySelectorAll(".hit").forEach((el) => el.classList.remove("hit"));
+    cg.querySelectorAll(".dt-selection").forEach((el) => el.remove());
     // Bake theme colours into the file so it looks right outside this page.
     const cs = getComputedStyle(svg);
     const v = (name) => cs.getPropertyValue(name).trim();
@@ -574,6 +585,10 @@ Topic: `;
       const svgClass = svgEl.getAttribute("class").split(/\s+/).filter((c) => /^mmt/.test(c)).join(" ");
       const optsJson = JSON.stringify({ ...themeDefaults(), ...effectiveStyle() });
       const lineWidths = JSON.stringify(THEMES[themeId()].lineWidths || null);
+      const tmp = document.createElement("div");
+      tmp.innerHTML = draw.markup();
+      tmp.querySelectorAll(".dt-selection").forEach((el) => el.remove());
+      const drawings = JSON.stringify(tmp.innerHTML).replace(/</g, "\\u003c");
       const middleUpTo = JSON.stringify(THEMES[themeId()].middleUpToDepth || 0);
       const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -604,7 +619,11 @@ ${themeCss()}</style>
   var mm = new M.Markmap("#mm", opts);
   var render = mm.renderData.bind(mm);
   mm.renderData = function(){ return render.apply(null, arguments).then(function(x){ mmDecorate(mm); return x; }); };
-  mm.setData(r.root).then(function(){ mm.fit(); });
+  var DRAW = ${drawings};
+  mm.setData(r.root).then(function(){
+    if (DRAW) mm.g.node().insertAdjacentHTML("beforeend", DRAW);
+    mm.fit();
+  });
 })();
 <\/script></body></html>`;
       download(`${fileBase()}.html`, html, "text/html");
@@ -840,6 +859,14 @@ ${themeCss()}</style>
       const willOpen = pop.hidden;
       closeMenus();
       pop.hidden = !willOpen;
+      if (willOpen) {
+        // Keep the menu inside the screen on narrow layouts.
+        pop.style.left = ""; pop.style.right = "";
+        const r = pop.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+        if (r.right > vw - 8) pop.style.left = `${parseFloat(getComputedStyle(pop).left) - (r.right - vw + 8)}px`;
+        const r2 = pop.getBoundingClientRect();
+        if (r2.left < 8) pop.style.left = `${parseFloat(getComputedStyle(pop).left) + (8 - r2.left)}px`;
+      }
       e.stopPropagation();
       return;
     }
@@ -860,11 +887,14 @@ ${themeCss()}</style>
 
   document.addEventListener("keydown", (e) => {
     const typing = e.target.closest("input, textarea, select, [contenteditable]");
-    if (e.key === "Escape") { closeMenus(); return; }
+    const onMap = !$("#mapView").hidden && mm;
+    if (e.key === "Escape") closeMenus();
+    if (onMap && !typing && !e.target.closest("dialog") && draw.handleKey(e)) { e.preventDefault(); return; }
+    if (e.key === "Escape") return;
     if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === "?") { $("#helpDialog").showModal(); return; }
-    if (e.key === "t" || e.key === "T") { if (!e.shiftKey) { toggleTheme(); return; } }
-    if ($("#mapView").hidden || !mm) return;
+    if (e.key === "T" || (!onMap && e.key === "t")) { toggleTheme(); return; }
+    if (!onMap) return;
     const k = e.key;
     if (k === "f") actions.fit();
     else if (k === "F") actions.fullscreen();
@@ -873,7 +903,7 @@ ${themeCss()}</style>
     else if (k === "0") expandAll();
     else if (/^[1-6]$/.test(k)) showLevels(Number(k));
     else if (k === "/") { e.preventDefault(); nodeSearch.focus(); nodeSearch.select(); }
-    else if (k === "e" || k === "E") actions.toggleEdit();
+    else if (k === "E") actions.toggleEdit();
     else return;
     e.preventDefault();
   });
@@ -915,6 +945,7 @@ markmap:
     if (entry.kind === "new") { current.kind = "draft"; slugTouched = false; }
     nodeSearch.value = "";
     searchState.q = ""; searchState.hits = []; updateSearchCount();
+    draw.load(drawKey(current));
     $("#editorPane").hidden = true;
     await renderMap(current.md, { fit: true });
     if (edit) await setEditor(true); else await setEditor(false);
