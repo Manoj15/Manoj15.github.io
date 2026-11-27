@@ -21,3 +21,9 @@ When asked to create or update a mind map:
 - To check it renders: `cd mindmaps && python3 -m http.server 8000`, then open
   `http://localhost:8000/#/map/<name>`.
 - Do not touch the rest of the site unless asked.
+
+## Changing the app
+
+- After editing anything in `mindmaps/assets/` or `mindmaps/config.js`, bump the
+  `?v=` value on every asset URL in `mindmaps/index.html` (use today's date),
+  or browsers may run a cached old file against the new page.
