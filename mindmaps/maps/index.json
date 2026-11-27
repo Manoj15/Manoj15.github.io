@@ -10,7 +10,7 @@
         "product-ds"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:49:54+00:00"
+      "updated": "2026-11-26T23:49:54Z"
     },
     {
       "slug": "getting-started",
@@ -20,7 +20,7 @@
         "guide"
       ],
       "nodes": 60,
-      "updated": "2026-11-26T23:51:41+00:00"
+      "updated": "2026-11-26T23:51:41Z"
     },
     {
       "slug": "machine-learning",
@@ -32,7 +32,7 @@
         "guide"
       ],
       "nodes": 50,
-      "updated": "2026-11-26T23:49:54+00:00"
+      "updated": "2026-11-26T23:49:54Z"
     },
     {
       "slug": "ml-approaches",
@@ -47,7 +47,7 @@
         "applied-science"
       ],
       "nodes": 211,
-      "updated": "2026-11-26T15:45:02-08:00"
+      "updated": "2026-11-26T16:07:53-08:00"
     },
     {
       "slug": "recsys-system-design",
@@ -59,7 +59,7 @@
         "ml"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:49:54+00:00"
+      "updated": "2026-11-26T23:49:54Z"
     },
     {
       "slug": "transformers",
@@ -71,7 +71,7 @@
         "ml"
       ],
       "nodes": 58,
-      "updated": "2026-11-26T23:49:54+00:00"
+      "updated": "2026-11-26T23:49:54Z"
     }
   ]
 }
