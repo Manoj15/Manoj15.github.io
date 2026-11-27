@@ -10,7 +10,7 @@
         "product-ds"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:49:54Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     },
     {
       "slug": "getting-started",
@@ -20,7 +20,7 @@
         "guide"
       ],
       "nodes": 60,
-      "updated": "2026-11-26T23:51:41Z"
+      "updated": "2026-11-26T23:51:41+00:00"
     },
     {
       "slug": "machine-learning",
@@ -32,20 +32,21 @@
         "guide"
       ],
       "nodes": 50,
-      "updated": "2026-11-26T23:49:54Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     },
     {
       "slug": "ml-approaches",
       "title": "Machine Learning Approaches",
-      "description": "Research-level map of ML paradigms, objective families and methods, showing where contrastive learning fits (coverage through mid-2026).",
+      "description": "An applied scientist's map of ML, from learning signals to the retrieval, ranking, LLM, causal and production methods big-tech teams use (coverage through 2026).",
       "tags": [
         "machine-learning",
-        "self-supervised",
+        "recsys",
+        "llm",
+        "causal-inference",
         "contrastive-learning",
-        "reinforcement-learning",
-        "research"
+        "applied-science"
       ],
-      "nodes": 193,
+      "nodes": 211,
       "updated": "2026-11-26T15:45:02-08:00"
     },
     {
@@ -58,7 +59,7 @@
         "ml"
       ],
       "nodes": 62,
-      "updated": "2026-11-26T23:49:54Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     },
     {
       "slug": "transformers",
@@ -70,7 +71,7 @@
         "ml"
       ],
       "nodes": 58,
-      "updated": "2026-11-26T23:49:54Z"
+      "updated": "2026-11-26T23:49:54+00:00"
     }
   ]
 }
